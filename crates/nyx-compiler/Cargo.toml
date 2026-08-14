@@ -11,3 +11,6 @@ num_enum.workspace = true
 nyx-parser.workspace = true
 nyx-source.workspace = true
 nyx-token.workspace = true
+
+[dev-dependencies]
+rstest.workspace = true

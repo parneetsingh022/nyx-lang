@@ -240,20 +240,24 @@ impl ByteCode {
         self.emit_u16(index);
     }
 
+    /// Emits a binary operation and its specific opcode.
     pub(crate) fn emit_binary_opcode(&mut self, opcode: BinaryOpCode) {
         self.code.push(OpCode::Binary as u8);
         self.code.push(opcode as u8);
     }
 
+    /// Emits a unary operation and its specific opcode.
     pub(crate) fn emit_unary_opcode(&mut self, opcode: UnaryOpCode) {
         self.code.push(OpCode::Unary as u8);
         self.code.push(opcode as u8);
     }
 
+    /// Appends a single opcode to the bytecode stream.
     pub(crate) fn emit_opcode(&mut self, opcode: OpCode) {
         self.code.push(opcode as u8);
     }
 
+    /// Appends a `u16` operand in little-endian byte order.
     pub(crate) fn emit_u16(&mut self, value: u16) {
         self.code.extend_from_slice(&value.to_le_bytes());
     }
@@ -261,9 +265,9 @@ impl ByteCode {
 
 #[cfg(test)]
 mod tests {
-    use nyx_token::SymbolRegistry;
-
     use super::*;
+    use nyx_token::SymbolRegistry;
+    use rstest::rstest;
 
     #[test]
     fn test_bytecode_default() {
@@ -337,5 +341,148 @@ mod tests {
         ];
 
         assert_eq!(bytecode.constants(), expected.as_slice());
+    }
+
+    #[test]
+    fn test_register_global() {
+        let mut registry = SymbolRegistry::new();
+        let name = registry.intern("name");
+        let age = registry.intern("age");
+
+        let mut bytecode = ByteCode::default();
+
+        let name_slot = bytecode.register_global(name);
+        let age_slot = bytecode.register_global(age);
+
+        assert_eq!(name_slot, 0);
+        assert_eq!(age_slot, 1);
+
+        assert_eq!(bytecode.globals().get(&name), Some(&0));
+        assert_eq!(bytecode.globals().get(&age), Some(&1));
+
+        assert_eq!(bytecode.globals().len(), 2);
+    }
+
+    #[test]
+    fn test_register_same_global_returns_existing_slot() {
+        let mut registry = SymbolRegistry::new();
+        let name = registry.intern("name");
+
+        let mut bytecode = ByteCode::default();
+
+        let first = bytecode.register_global(name);
+        let second = bytecode.register_global(name);
+
+        assert_eq!(first, second);
+        assert_eq!(first, 0);
+
+        assert_eq!(bytecode.globals().len(), 1);
+        assert_eq!(bytecode.globals().get(&name), Some(&0));
+    }
+
+    #[test]
+    fn test_emit_load_constant() {
+        let mut bytecode = ByteCode::default();
+
+        bytecode.emit_load_constant(42);
+
+        assert_eq!(bytecode.code(), &[OpCode::LoadConstant as u8, 42, 0,]);
+    }
+
+    #[test]
+    fn test_emit_u16_uses_little_endian() {
+        let mut bytecode = ByteCode::default();
+
+        bytecode.emit_u16(0x1234);
+
+        assert_eq!(bytecode.code(), &[0x34, 0x12]);
+    }
+
+    #[test]
+    fn test_emit_define_global() {
+        let mut bytecode = ByteCode::default();
+
+        bytecode.emit_define_global(0x1234);
+
+        assert_eq!(bytecode.code(), &[OpCode::DefineGlobal as u8, 0x34, 0x12,]);
+    }
+
+    #[test]
+    fn test_emit_load_global() {
+        let mut bytecode = ByteCode::default();
+
+        bytecode.emit_load_global(0x1234);
+
+        assert_eq!(bytecode.code(), &[OpCode::LoadGlobal as u8, 0x34, 0x12,]);
+    }
+
+    #[test]
+    fn test_emit_store_global() {
+        let mut bytecode = ByteCode::default();
+
+        bytecode.emit_store_global(0x1234);
+
+        assert_eq!(bytecode.code(), &[OpCode::StoreGlobal as u8, 0x34, 0x12,]);
+    }
+
+    #[test]
+    fn test_emit_opcode() {
+        let mut bytecode = ByteCode::default();
+
+        bytecode.emit_opcode(OpCode::LoadConstant);
+        bytecode.emit_opcode(OpCode::DefineGlobal);
+
+        assert_eq!(
+            bytecode.code(),
+            &[OpCode::LoadConstant as u8, OpCode::DefineGlobal as u8,]
+        );
+    }
+
+    #[test]
+    fn test_emitted_instructions_preserve_order() {
+        let mut bytecode = ByteCode::default();
+
+        bytecode.emit_load_constant(3);
+        bytecode.emit_define_global(7);
+        bytecode.emit_load_global(7);
+
+        assert_eq!(
+            bytecode.code(),
+            &[
+                OpCode::LoadConstant as u8,
+                3,
+                0,
+                OpCode::DefineGlobal as u8,
+                7,
+                0,
+                OpCode::LoadGlobal as u8,
+                7,
+                0,
+            ]
+        );
+    }
+
+    #[rstest]
+    #[case(BinaryOpCode::Add)]
+    #[case(BinaryOpCode::Sub)]
+    #[case(BinaryOpCode::Mul)]
+    #[case(BinaryOpCode::Div)]
+    fn test_emit_binary_opcode(#[case] opcode: BinaryOpCode) {
+        let mut bytecode = ByteCode::default();
+
+        bytecode.emit_binary_opcode(opcode);
+
+        assert_eq!(bytecode.code(), &[OpCode::Binary as u8, opcode as u8]);
+    }
+
+    #[rstest]
+    #[case(UnaryOpCode::Neg)]
+    #[case(UnaryOpCode::Not)]
+    fn test_emit_unary_opcode(#[case] opcode: UnaryOpCode) {
+        let mut bytecode = ByteCode::default();
+
+        bytecode.emit_unary_opcode(opcode);
+
+        assert_eq!(bytecode.code(), &[OpCode::Unary as u8, opcode as u8]);
     }
 }

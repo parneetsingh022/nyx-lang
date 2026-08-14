@@ -293,6 +293,7 @@ dependencies = [
  "nyx-parser",
  "nyx-source",
  "nyx-token",
+ "rstest",
  "strum",
  "strum_macros",
 ]
