@@ -153,3 +153,28 @@ fn test_compile_reuses_constant_across_expressions() {
         "#
     ));
 }
+
+#[test]
+fn test_integer_overflow_is_not_constant_folded() {
+    insta::assert_snapshot!(compile_source("let result = 9223372036854775807 + 1;"));
+}
+
+#[test]
+fn test_integer_division_by_zero_is_not_constant_folded() {
+    insta::assert_snapshot!(compile_source("let result = 10 / 0;"));
+}
+
+#[test]
+fn test_float_division_by_zero_is_not_constant_folded() {
+    insta::assert_snapshot!(compile_source("let result = 10.0 / 0.0;"));
+}
+
+#[test]
+fn test_integer_underflow_is_not_constant_folded() {
+    insta::assert_snapshot!(compile_source("let result = -9223372036854775807 - 2;"));
+}
+
+#[test]
+fn test_integer_multiplication_overflow_is_not_constant_folded() {
+    insta::assert_snapshot!(compile_source("let result = 9223372036854775807 * 2;"));
+}

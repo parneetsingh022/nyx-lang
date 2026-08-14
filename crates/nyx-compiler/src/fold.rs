@@ -56,10 +56,10 @@ fn fold_binary(left: Value, op: BinaryOp, right: Value) -> Option<Value> {
 
 fn fold_int(left: i64, op: BinaryOp, right: i64) -> Option<Value> {
     let value = match op {
-        BinaryOp::Plus => left + right,
-        BinaryOp::Minus => left - right,
-        BinaryOp::Multiply => left * right,
-        BinaryOp::Divide => left / right,
+        BinaryOp::Plus => left.checked_add(right)?,
+        BinaryOp::Minus => left.checked_sub(right)?,
+        BinaryOp::Multiply => left.checked_mul(right)?,
+        BinaryOp::Divide => left.checked_div(right)?,
         _ => return None,
     };
 
@@ -75,7 +75,7 @@ fn fold_float(left: f64, op: BinaryOp, right: f64) -> Option<Value> {
         _ => return None,
     };
 
-    Some(Value::Float(value))
+    value.is_finite().then_some(Value::Float(value))
 }
 
 #[cfg(test)]
@@ -299,5 +299,79 @@ mod tests {
         let expr = binary(expr, BinaryOp::Divide, denominator);
 
         assert_eq!(fold_expr(&expr), Some(Value::Float(-7.8)));
+    }
+
+    #[rstest]
+    #[case(i64::MAX, BinaryOp::Plus, 1)]
+    #[case(i64::MIN, BinaryOp::Minus, 1)]
+    #[case(i64::MAX, BinaryOp::Multiply, 2)]
+    #[case(i64::MIN, BinaryOp::Multiply, -1)]
+    fn test_integer_overflow_returns_none(
+        #[case] left: i64,
+        #[case] op: BinaryOp,
+        #[case] right: i64,
+    ) {
+        let expr = binary(int(left), op, int(right));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_integer_division_by_zero_returns_none() {
+        let expr = binary(int(10), BinaryOp::Divide, int(0));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_integer_division_overflow_returns_none() {
+        // i64::MIN / -1 cannot be represented as an i64.
+        let expr = binary(int(i64::MIN), BinaryOp::Divide, int(-1));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_float_division_by_zero_returns_none() {
+        // 10.0 / 0.0 produces +infinity.
+        let expr = binary(float(10.0), BinaryOp::Divide, float(0.0));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_float_zero_divided_by_zero_returns_none() {
+        // 0.0 / 0.0 produces NaN.
+        let expr = binary(float(0.0), BinaryOp::Divide, float(0.0));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_float_overflow_returns_none() {
+        let expr = binary(float(f64::MAX), BinaryOp::Multiply, float(2.0));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_negative_float_overflow_returns_none() {
+        let expr = binary(float(-f64::MAX), BinaryOp::Multiply, float(2.0));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_mixed_float_overflow_returns_none() {
+        let expr = binary(float(f64::MAX), BinaryOp::Multiply, int(2));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_mixed_float_division_by_zero_returns_none() {
+        let expr = binary(int(10), BinaryOp::Divide, float(0.0));
+
+        assert_eq!(fold_expr(&expr), None);
     }
 }
