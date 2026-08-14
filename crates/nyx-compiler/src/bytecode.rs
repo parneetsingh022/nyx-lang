@@ -7,15 +7,46 @@ use crate::{
 };
 use nyx_token::Symbol;
 
+/// A hashable representation of a [`Value`] used for constant-pool deduplication.
+///
+/// `ConstKey` defines how values are identified inside the constant pool. Unlike
+/// [`Value`], it can implement [`Eq`] and [`Hash`] because floating-point values
+/// are represented by their raw [`f64`] bit pattern.
+///
+/// This allows constants to be used as keys in a hash map while keeping
+/// constant-pool identity separate from the runtime equality semantics of
+/// [`Value`].
+///
+/// # Floating-point values
+///
+/// [`f64`] does not implement [`Eq`] or [`Hash`] because of special values such
+/// as NaN. To make floats suitable for use as constant keys, they are converted
+/// to their raw `u64` representation using [`f64::to_bits`].
+///
+/// As a consequence, floating-point constants are considered identical only
+/// when their bit representations are identical. For example, `0.0` and `-0.0`
+/// produce different keys.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum ConstKey {
+    /// An integer constant.
     Int(i64),
+
+    /// A floating-point constant represented by its raw IEEE 754 bit pattern.
     Float(u64),
+
+    /// A boolean constant.
     Bool(bool),
+
+    /// An interned identifier.
     Ident(Symbol),
 }
 
 impl From<Value> for ConstKey {
+    /// Converts a runtime [`Value`] into its constant-pool key representation.
+    ///
+    /// Integer, boolean, and identifier values retain their underlying values.
+    /// Floating-point values are converted to their raw bit representation so
+    /// that the resulting key can safely implement [`Eq`] and [`Hash`].
     fn from(value: Value) -> Self {
         match value {
             Value::Int(v) => ConstKey::Int(v),
@@ -26,17 +57,57 @@ impl From<Value> for ConstKey {
     }
 }
 
+/// Stores bytecode constants and deduplicates repeated values.
+///
+/// `ConstPool` maintains constants in insertion order while using a lookup table
+/// to ensure that equivalent constants are stored only once.
+///
+/// The [`Vec`] provides index-based access to constants, which is useful for
+/// bytecode instructions that refer to constants by numeric index. The
+/// [`HashMap`] provides efficient lookup from a [`ConstKey`] to the existing
+/// constant index.
+///
+/// # Indexing
+///
+/// Constant indices are represented as `u16`, so the pool supports at most
+/// `u16::MAX + 1` distinct constants. Attempting to add more constants causes
+/// [`ConstPool::add`] to panic.
+///
+/// # Deduplication
+///
+/// When a value is added, it is converted into a [`ConstKey`]. If the key is
+/// already present in the lookup table, the existing index is returned and the
+/// value is not inserted again.
+///
+/// This keeps bytecode compact while preserving the insertion order of unique
+/// constants.
 #[derive(Debug, Default, Clone)]
 struct ConstPool {
+    /// Unique constants stored in the order they were first inserted.
+    ///
+    /// The position of each value corresponds to the `u16` index used by
+    /// bytecode instructions.
     constants: Vec<Value>,
+
+    /// Maps each constant's canonical key to its index in [`Self::constants`].
     lookup: HashMap<ConstKey, u16>,
 }
 
 impl ConstPool {
+    /// Adds a constant to the pool and returns its index.
+    ///
+    /// If an equivalent constant already exists, its existing index is returned
+    /// and the value is not inserted again.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of unique constants exceeds the range representable
+    /// by `u16`.
     fn add(&mut self, value: Value) -> u16 {
         let key = ConstKey::from(value);
-        if let Some(&value) = self.lookup.get(&key) {
-            return value;
+
+        if let Some(&index) = self.lookup.get(&key) {
+            return index;
         }
 
         let index = u16::try_from(self.constants.len())
@@ -48,6 +119,9 @@ impl ConstPool {
         index
     }
 
+    /// Returns all unique constants currently stored in the pool.
+    ///
+    /// Constants are returned in the order in which they were first inserted.
     fn constants(&self) -> &[Value] {
         self.constants.as_slice()
     }
