@@ -1,6 +1,6 @@
 use crate::ByteCode;
+use crate::fold_expr;
 use crate::opcodes::{BinaryOpCode, UnaryOpCode};
-use crate::{Value, fold_expr};
 use nyx_parser::ast::{BinaryOp, Expr, ExprKind, SpannedIdentifier, Stmt, StmtKind, UnaryOp};
 
 pub struct Compiler<'a> {
@@ -44,19 +44,10 @@ impl<'a> Compiler<'a> {
         }
 
         match expr.kind() {
-            ExprKind::IntLiteral(value) => {
-                let index = self.bytecode.store_const(Value::Int(*value));
-                self.bytecode.emit_load_constant(index);
+            ExprKind::IntLiteral(_) | ExprKind::FloatLiteral(_) | ExprKind::Bool(_) => {
+                unreachable!("literals are always folded")
             }
 
-            ExprKind::FloatLiteral(value) => {
-                let index = self.bytecode.store_const(Value::Float(*value));
-                self.bytecode.emit_load_constant(index);
-            }
-            ExprKind::Bool(value) => {
-                let index = self.bytecode.store_const(Value::Bool(*value));
-                self.bytecode.emit_load_constant(index);
-            }
             ExprKind::Identifier(symbol) => {
                 let index = self
                     .bytecode
