@@ -241,15 +241,15 @@ impl ByteCode {
     }
 
     /// Emits a binary operation and its specific opcode.
-    pub(crate) fn emit_binary_opcode(&mut self, opcode: BinaryOpCode) {
-        self.code.push(OpCode::Binary as u8);
-        self.code.push(opcode as u8);
+    pub(crate) fn emit_binary_opcode(&mut self, binary_op: BinaryOpCode) {
+        self.emit_opcode(OpCode::Binary);
+        self.code.push(binary_op as u8);
     }
 
     /// Emits a unary operation and its specific opcode.
-    pub(crate) fn emit_unary_opcode(&mut self, opcode: UnaryOpCode) {
-        self.code.push(OpCode::Unary as u8);
-        self.code.push(opcode as u8);
+    pub(crate) fn emit_unary_opcode(&mut self, unary_op: UnaryOpCode) {
+        self.emit_opcode(OpCode::Unary);
+        self.code.push(unary_op as u8);
     }
 
     /// Appends a single opcode to the bytecode stream.
