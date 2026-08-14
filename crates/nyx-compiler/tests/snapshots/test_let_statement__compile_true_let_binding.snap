@@ -1,0 +1,13 @@
+---
+source: crates/nyx-compiler/tests/test_let_statement.rs
+expression: "compile_source(\"let enabled = true;\")"
+---
+Constants:
+   0  Bool(true)
+
+Globals:
+   0  enabled
+
+Bytecode:
+   0  LOAD_CONSTANT          0  (Bool(true))
+   3  DEFINE_GLOBAL          0  (enabled)

@@ -289,7 +289,10 @@ dependencies = [
 name = "nyx-compiler"
 version = "0.1.0"
 dependencies = [
+ "insta",
  "num_enum",
+ "nyx-diagnostic",
+ "nyx-lexer",
  "nyx-parser",
  "nyx-source",
  "nyx-token",

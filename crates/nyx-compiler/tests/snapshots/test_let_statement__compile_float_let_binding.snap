@@ -1,0 +1,13 @@
+---
+source: crates/nyx-compiler/tests/test_let_statement.rs
+expression: "compile_source(\"let pi = 3.14;\")"
+---
+Constants:
+   0  Float(3.14)
+
+Globals:
+   0  pi
+
+Bytecode:
+   0  LOAD_CONSTANT          0  (Float(3.14))
+   3  DEFINE_GLOBAL          0  (pi)

@@ -14,3 +14,7 @@ nyx-token.workspace = true
 
 [dev-dependencies]
 rstest.workspace = true
+insta.workspace = true
+nyx-lexer.workspace = true
+nyx-parser.workspace = true
+nyx-diagnostic.workspace = true

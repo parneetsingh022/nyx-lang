@@ -1,0 +1,37 @@
+---
+source: crates/nyx-compiler/tests/test_let_statement.rs
+expression: "compile_source(r#\"\n        let a = 10;\n        let b = 10;\n        let c = 3.14;\n        let d = 3.14;\n        let e = true;\n        let f = true;\n        let g = false;\n        let h = false;\n        \"#)"
+---
+Constants:
+   0  Int(10)
+   1  Float(3.14)
+   2  Bool(true)
+   3  Bool(false)
+
+Globals:
+   0  a
+   1  b
+   2  c
+   3  d
+   4  e
+   5  f
+   6  g
+   7  h
+
+Bytecode:
+   0  LOAD_CONSTANT          0  (Int(10))
+   3  DEFINE_GLOBAL          0  (a)
+   6  LOAD_CONSTANT          0  (Int(10))
+   9  DEFINE_GLOBAL          1  (b)
+  12  LOAD_CONSTANT          1  (Float(3.14))
+  15  DEFINE_GLOBAL          2  (c)
+  18  LOAD_CONSTANT          1  (Float(3.14))
+  21  DEFINE_GLOBAL          3  (d)
+  24  LOAD_CONSTANT          2  (Bool(true))
+  27  DEFINE_GLOBAL          4  (e)
+  30  LOAD_CONSTANT          2  (Bool(true))
+  33  DEFINE_GLOBAL          5  (f)
+  36  LOAD_CONSTANT          3  (Bool(false))
+  39  DEFINE_GLOBAL          6  (g)
+  42  LOAD_CONSTANT          3  (Bool(false))
+  45  DEFINE_GLOBAL          7  (h)
