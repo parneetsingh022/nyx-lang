@@ -1,9 +1,11 @@
+mod bytecode;
 mod compiler;
 mod disassembler;
 mod fold;
 mod opcodes;
 
-pub use compiler::{ByteCode, Compiler};
+pub use bytecode::ByteCode;
+pub use compiler::Compiler;
 pub use disassembler::Disassembler;
 pub use opcodes::OpCode;
 
