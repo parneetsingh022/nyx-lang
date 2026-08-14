@@ -13,7 +13,7 @@ pub(crate) use fold::fold_expr;
 
 use nyx_token::Symbol;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Value {
     Int(i64),
     Float(f64),

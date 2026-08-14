@@ -7,6 +7,52 @@ use crate::{
 };
 use nyx_token::Symbol;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum ConstKey {
+    Int(i64),
+    Float(u64),
+    Bool(bool),
+    Ident(Symbol),
+}
+
+impl From<Value> for ConstKey {
+    fn from(value: Value) -> Self {
+        match value {
+            Value::Int(v) => ConstKey::Int(v),
+            Value::Float(v) => ConstKey::Float(v.to_bits()),
+            Value::Bool(v) => ConstKey::Bool(v),
+            Value::Ident(v) => ConstKey::Ident(v),
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+struct ConstPool {
+    constants: Vec<Value>,
+    lookup: HashMap<ConstKey, u16>,
+}
+
+impl ConstPool {
+    fn add(&mut self, value: Value) -> u16 {
+        let key = ConstKey::from(value);
+        if let Some(&value) = self.lookup.get(&key) {
+            return value;
+        }
+
+        let index = u16::try_from(self.constants.len())
+            .expect("constant pool exceeds maximum supported size");
+
+        self.constants.push(value);
+        self.lookup.insert(key, index);
+
+        index
+    }
+
+    fn constants(&self) -> &[Value] {
+        self.constants.as_slice()
+    }
+}
+
 /// Compiled Nyx bytecode and its associated constant pool.
 #[derive(Debug, Default, Clone)]
 pub struct ByteCode {
@@ -14,7 +60,7 @@ pub struct ByteCode {
     code: Vec<u8>,
 
     /// Constants referenced by bytecode instructions.
-    constants: Vec<Value>,
+    const_pool: ConstPool,
 
     /// Maps interned global variable names to their assigned runtime slots.
     ///
@@ -39,7 +85,7 @@ impl ByteCode {
     /// Bytecode instructions such as [`OpCode::LoadConstant`] use an index
     /// into this slice to reference constants.
     pub fn constants(&self) -> &[Value] {
-        self.constants.as_slice()
+        self.const_pool.constants()
     }
 
     /// Returns the mapping from interned global variable names to their
@@ -59,12 +105,7 @@ impl ByteCode {
     /// Panics if the constant pool already contains the maximum number of
     /// constants addressable by a `u16`.
     pub(crate) fn store_const(&mut self, value: Value) -> u16 {
-        let index = u16::try_from(self.constants.len())
-            .expect("constant pool exceeds maximum supported size");
-
-        self.constants.push(value);
-
-        index
+        self.const_pool.add(value)
     }
 
     /// Registers a global variable and returns its runtime slot.
@@ -141,5 +182,86 @@ impl ByteCode {
 
     pub(crate) fn emit_u16(&mut self, value: u16) {
         self.code.extend_from_slice(&value.to_le_bytes());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use nyx_token::SymbolRegistry;
+
+    use super::*;
+
+    #[test]
+    fn test_bytecode_default() {
+        let bytecode = ByteCode::default();
+
+        assert!(bytecode.code().is_empty());
+        assert!(bytecode.constants().is_empty());
+        assert!(bytecode.globals().is_empty());
+    }
+
+    #[test]
+    fn test_bytecode_store_constant() {
+        // Make few symbols
+        let mut registry = SymbolRegistry::new();
+        let name = registry.intern("name");
+        let age = registry.intern("age");
+
+        let constants = vec![
+            Value::Int(10),
+            Value::Float(39.0),
+            Value::Ident(name),
+            Value::Bool(true),
+            Value::Bool(false),
+            Value::Ident(age),
+        ];
+
+        let mut bytecode = ByteCode::default();
+
+        for item in constants.iter().copied() {
+            bytecode.store_const(item);
+        }
+
+        assert_eq!(bytecode.constants(), constants.as_slice());
+        assert!(bytecode.code().is_empty());
+        assert!(bytecode.globals().is_empty());
+    }
+
+    #[test]
+    fn test_same_constants_are_stored_once() {
+        let mut registry = SymbolRegistry::new();
+        let name = registry.intern("name");
+
+        let constants = vec![
+            Value::Int(10),
+            Value::Int(10),
+            Value::Ident(name),
+            Value::Float(39.203),
+            Value::Ident(name),
+            Value::Float(39.203),
+            Value::Float(39.203),
+            Value::Float(39.202),
+            Value::Bool(true),
+            Value::Bool(false),
+            Value::Bool(true),
+            Value::Bool(false),
+        ];
+
+        let mut bytecode = ByteCode::default();
+
+        for item in constants.iter().copied() {
+            bytecode.store_const(item);
+        }
+
+        let expected = vec![
+            Value::Int(10),
+            Value::Ident(name),
+            Value::Float(39.203),
+            Value::Float(39.202),
+            Value::Bool(true),
+            Value::Bool(false),
+        ];
+
+        assert_eq!(bytecode.constants(), expected.as_slice());
     }
 }
