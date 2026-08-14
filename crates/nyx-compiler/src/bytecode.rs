@@ -36,9 +36,6 @@ enum ConstKey {
 
     /// A boolean constant.
     Bool(bool),
-
-    /// An interned identifier.
-    Ident(Symbol),
 }
 
 impl From<Value> for ConstKey {
@@ -52,7 +49,6 @@ impl From<Value> for ConstKey {
             Value::Int(v) => ConstKey::Int(v),
             Value::Float(v) => ConstKey::Float(v.to_bits()),
             Value::Bool(v) => ConstKey::Bool(v),
-            Value::Ident(v) => ConstKey::Ident(v),
         }
     }
 }
@@ -280,18 +276,11 @@ mod tests {
 
     #[test]
     fn test_bytecode_store_constant() {
-        // Make few symbols
-        let mut registry = SymbolRegistry::new();
-        let name = registry.intern("name");
-        let age = registry.intern("age");
-
         let constants = vec![
             Value::Int(10),
             Value::Float(39.0),
-            Value::Ident(name),
             Value::Bool(true),
             Value::Bool(false),
-            Value::Ident(age),
         ];
 
         let mut bytecode = ByteCode::default();
@@ -307,15 +296,10 @@ mod tests {
 
     #[test]
     fn test_same_constants_are_stored_once() {
-        let mut registry = SymbolRegistry::new();
-        let name = registry.intern("name");
-
         let constants = vec![
             Value::Int(10),
             Value::Int(10),
-            Value::Ident(name),
             Value::Float(39.203),
-            Value::Ident(name),
             Value::Float(39.203),
             Value::Float(39.203),
             Value::Float(39.202),
@@ -333,7 +317,6 @@ mod tests {
 
         let expected = vec![
             Value::Int(10),
-            Value::Ident(name),
             Value::Float(39.203),
             Value::Float(39.202),
             Value::Bool(true),

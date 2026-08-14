@@ -3,7 +3,7 @@ use std::fmt::{self, Write};
 use nyx_token::SymbolRegistry;
 
 use crate::{
-    ByteCode, OpCode, Value,
+    ByteCode, OpCode,
     opcodes::{BinaryOpCode, UnaryOpCode},
 };
 
@@ -35,21 +35,13 @@ impl<'a> Disassembler<'a> {
                 let index = self.read_u16(offset + 1);
 
                 match self.bytecode.constants().get(index as usize) {
-                    Some(value) => match value {
-                        Value::Ident(symbol) => {
-                            let name = self.symbols.resolve(*symbol);
-
-                            writeln!(output, "{offset:4}  {:<18} {:5}  ({name})", opcode, index,)?;
-                        }
-
-                        _ => {
-                            writeln!(
-                                output,
-                                "{offset:4}  {:<18} {:5}  ({value:?})",
-                                opcode, index,
-                            )?;
-                        }
-                    },
+                    Some(value) => {
+                        writeln!(
+                            output,
+                            "{offset:4}  {:<18} {:5}  ({value:?})",
+                            opcode, index,
+                        )?;
+                    }
 
                     None => {
                         writeln!(
@@ -141,16 +133,7 @@ impl fmt::Display for Disassembler<'_> {
         writeln!(output, "Constants:")?;
 
         for (index, value) in self.bytecode.constants().iter().enumerate() {
-            match value {
-                Value::Ident(symbol) => {
-                    let name = self.symbols.resolve(*symbol);
-                    writeln!(output, "{index:4}  Ident({name})")?;
-                }
-
-                _ => {
-                    writeln!(output, "{index:4}  {value:?}")?;
-                }
-            }
+            writeln!(output, "{index:4}  {value:?}")?;
         }
 
         writeln!(output)?;
