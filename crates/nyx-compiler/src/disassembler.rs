@@ -101,18 +101,22 @@ impl<'a> Disassembler<'a> {
 
             OpCode::Binary => {
                 let code = self.read_u8(offset + 1);
-                let op = BinaryOpCode::from_byte(code).expect("invalid binary opcode");
 
-                writeln!(output, "{offset:4}  {:<18} {:5}  ({})", opcode, code, op)?;
+                let op = BinaryOpCode::from_byte(code)
+                    .map_or_else(|| format!("Unknown({code})"), |op| op.to_string());
+
+                writeln!(output, "{offset:4}  {:<18} {:5}  ({op})", opcode, code)?;
 
                 Ok(offset + 2)
             }
 
             OpCode::Unary => {
                 let code = self.read_u8(offset + 1);
-                let op = UnaryOpCode::from_byte(code).expect("invalid unary opcode");
 
-                writeln!(output, "{offset:4}  {:<18} {:5}  ({})", opcode, code, op)?;
+                let op = UnaryOpCode::from_byte(code)
+                    .map_or_else(|| format!("Unknown({code})"), |op| op.to_string());
+
+                writeln!(output, "{offset:4}  {:<18} {:5}  ({op})", opcode, code)?;
 
                 Ok(offset + 2)
             }
