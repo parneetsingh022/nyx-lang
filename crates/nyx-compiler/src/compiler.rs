@@ -2,6 +2,7 @@ use crate::ByteCode;
 use crate::fold_expr;
 use crate::opcodes::{BinaryOpCode, UnaryOpCode};
 use nyx_parser::ast::{BinaryOp, Expr, ExprKind, SpannedIdentifier, Stmt, StmtKind, UnaryOp};
+use nyx_token::Symbol;
 
 pub struct Compiler<'a> {
     stmts: &'a [Stmt],
@@ -20,7 +21,7 @@ impl<'a> Compiler<'a> {
         for stmt in self.stmts {
             match stmt.kind() {
                 StmtKind::Let { name, expr } => self.compile_let_stmt(name, expr),
-                _ => todo!(),
+                _ => todo!("{:?} is not implemented yet", stmt.kind()),
             }
         }
     }
@@ -48,37 +49,43 @@ impl<'a> Compiler<'a> {
                 unreachable!("literals are always folded")
             }
 
-            ExprKind::Identifier(symbol) => {
-                let index = self
-                    .bytecode
-                    .globals()
-                    .get(symbol)
-                    .copied()
-                    .expect("referenced undefined global");
+            ExprKind::Identifier(symbol) => self.compile_identifier(symbol),
+            ExprKind::Binary { left, op, right } => self.compile_binary_expr(left, op, right),
+            ExprKind::Unary { op, expr } => self.compile_unary_expr(op, expr),
+            ExprKind::Call { .. } => todo!("function call is not implemented yet!"),
+        }
+    }
 
-                self.bytecode.emit_load_global(index);
-            }
-            ExprKind::Binary { left, op, right } => {
-                self.compile_expr(left);
-                self.compile_expr(right);
+    fn compile_identifier(&mut self, symbol: &Symbol) {
+        let index = self
+            .bytecode
+            .globals()
+            .get(symbol)
+            .copied()
+            .expect("referenced undefined global");
 
-                match op {
-                    BinaryOp::Plus => self.bytecode.emit_binary_opcode(BinaryOpCode::Add),
-                    BinaryOp::Minus => self.bytecode.emit_binary_opcode(BinaryOpCode::Sub),
-                    BinaryOp::Multiply => self.bytecode.emit_binary_opcode(BinaryOpCode::Mul),
-                    BinaryOp::Divide => self.bytecode.emit_binary_opcode(BinaryOpCode::Div),
-                    BinaryOp::Assignment => todo!(),
-                }
-            }
-            ExprKind::Unary { op, expr } => {
-                self.compile_expr(expr);
+        self.bytecode.emit_load_global(index);
+    }
 
-                match op {
-                    UnaryOp::Minus => self.bytecode.emit_unary_opcode(UnaryOpCode::Neg),
-                    UnaryOp::Not => self.bytecode.emit_unary_opcode(UnaryOpCode::Not),
-                }
-            }
-            ExprKind::Call { .. } => todo!(),
+    fn compile_binary_expr(&mut self, left: &Expr, op: &BinaryOp, right: &Expr) {
+        self.compile_expr(left);
+        self.compile_expr(right);
+
+        match op {
+            BinaryOp::Plus => self.bytecode.emit_binary_opcode(BinaryOpCode::Add),
+            BinaryOp::Minus => self.bytecode.emit_binary_opcode(BinaryOpCode::Sub),
+            BinaryOp::Multiply => self.bytecode.emit_binary_opcode(BinaryOpCode::Mul),
+            BinaryOp::Divide => self.bytecode.emit_binary_opcode(BinaryOpCode::Div),
+            BinaryOp::Assignment => todo!("assignment is not implemented yet!"),
+        }
+    }
+
+    fn compile_unary_expr(&mut self, op: &UnaryOp, expr: &Expr) {
+        self.compile_expr(expr);
+
+        match op {
+            UnaryOp::Minus => self.bytecode.emit_unary_opcode(UnaryOpCode::Neg),
+            UnaryOp::Not => self.bytecode.emit_unary_opcode(UnaryOpCode::Not),
         }
     }
 }
