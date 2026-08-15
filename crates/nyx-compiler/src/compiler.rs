@@ -33,14 +33,12 @@ impl<'a> Compiler<'a> {
     fn compile_let_stmt(&mut self, name: &SpannedIdentifier, expr: &Expr) {
         self.compile_expr(expr);
 
-        let index = self.bytecode.register_global(name.symbol());
-        self.bytecode.emit_define_global(index);
+        self.bytecode.emit_define_global(name.symbol());
     }
 
     fn compile_expr(&mut self, expr: &Expr) {
         if let Some(value) = fold_expr(expr) {
-            let index = self.bytecode.store_const(value);
-            self.bytecode.emit_load_constant(index);
+            self.bytecode.emit_load_constant(value);
             return;
         }
 

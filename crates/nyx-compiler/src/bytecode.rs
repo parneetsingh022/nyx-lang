@@ -199,20 +199,23 @@ impl ByteCode {
 
         slot
     }
-    /// Emits a `LoadConstant` instruction for the given constant-pool index.
+
+    /// Stores the given constant and emits a `LoadConstant` instruction for it.
     ///
-    /// The constant index is encoded as a two-byte operand immediately
-    /// following the opcode.
-    pub(crate) fn emit_load_constant(&mut self, index: u16) {
+    /// The value is added to the constant pool, and the resulting constant-pool
+    /// index is encoded as a two-byte operand immediately following the opcode.
+    pub(crate) fn emit_load_constant(&mut self, value: Value) {
+        let index = self.store_const(value);
         self.emit_opcode(OpCode::LoadConstant);
         self.emit_u16(index);
     }
 
-    /// Emits a `DefineGlobal` instruction for the given global slot.
+    /// Registers the given symbol as a global and emits a `DefineGlobal` instruction.
     ///
-    /// The global index is encoded as a two-byte operand immediately
-    /// following the opcode.
-    pub(crate) fn emit_define_global(&mut self, index: u16) {
+    /// The symbol is registered in the global table, and the resulting global index
+    /// is encoded as a two-byte operand immediately following the opcode.
+    pub(crate) fn emit_define_global(&mut self, symbol: Symbol) {
+        let index = self.register_global(symbol);
         self.emit_opcode(OpCode::DefineGlobal);
         self.emit_u16(index);
     }
@@ -364,12 +367,13 @@ mod tests {
     }
 
     #[test]
-    fn test_emit_load_constant() {
+    fn test_emit_const() {
         let mut bytecode = ByteCode::default();
 
-        bytecode.emit_load_constant(42);
+        bytecode.emit_load_constant(Value::Int(42));
 
-        assert_eq!(bytecode.code(), &[OpCode::LoadConstant as u8, 42, 0,]);
+        assert_eq!(bytecode.constants(), &[Value::Int(42)]);
+        assert_eq!(bytecode.code(), &[OpCode::LoadConstant as u8, 0, 0],);
     }
 
     #[test]
@@ -384,10 +388,12 @@ mod tests {
     #[test]
     fn test_emit_define_global() {
         let mut bytecode = ByteCode::default();
+        let mut registry = SymbolRegistry::new();
+        let symbol = registry.intern("result");
 
-        bytecode.emit_define_global(0x1234);
+        bytecode.emit_define_global(symbol);
 
-        assert_eq!(bytecode.code(), &[OpCode::DefineGlobal as u8, 0x34, 0x12,]);
+        assert_eq!(bytecode.code(), &[OpCode::DefineGlobal as u8, 0, 0]);
     }
 
     #[test]
@@ -424,25 +430,29 @@ mod tests {
     #[test]
     fn test_emitted_instructions_preserve_order() {
         let mut bytecode = ByteCode::default();
+        let mut registry = SymbolRegistry::new();
+        let symbol = registry.intern("result");
 
-        bytecode.emit_load_constant(3);
-        bytecode.emit_define_global(7);
-        bytecode.emit_load_global(7);
+        bytecode.emit_load_constant(Value::Int(3));
+        bytecode.emit_define_global(symbol);
+        bytecode.emit_load_global(0);
 
         assert_eq!(
             bytecode.code(),
             &[
                 OpCode::LoadConstant as u8,
-                3,
+                0,
                 0,
                 OpCode::DefineGlobal as u8,
-                7,
+                0,
                 0,
                 OpCode::LoadGlobal as u8,
-                7,
+                0,
                 0,
             ]
         );
+
+        assert_eq!(bytecode.constants(), &[Value::Int(3)]);
     }
 
     #[rstest]
