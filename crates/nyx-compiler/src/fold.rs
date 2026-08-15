@@ -55,6 +55,19 @@ fn fold_unary(op: UnaryOp, value: Value) -> Option<Value> {
     }
 }
 
+/// Attempts to fold a binary operation into a constant [`Value`].
+///
+/// Dispatches the operation based on the operand types. Mixed integer/float
+/// operations are promoted to floating-point before evaluation.
+///
+/// # Arguments
+/// * `left` - The left-hand constant operand.
+/// * `op` - The binary operator to apply.
+/// * `right` - The right-hand constant operand.
+///
+/// # Returns
+/// * `Some(Value)` if the operation can be evaluated successfully.
+/// * `None` if the operand types are unsupported or the operation cannot be folded.
 fn fold_binary(left: Value, op: BinaryOp, right: Value) -> Option<Value> {
     match (left, right) {
         (Value::Int(a), Value::Int(b)) => fold_int(a, op, b),
@@ -65,6 +78,20 @@ fn fold_binary(left: Value, op: BinaryOp, right: Value) -> Option<Value> {
     }
 }
 
+/// Attempts to fold an integer binary operation into a constant [`Value`].
+///
+/// Uses checked integer arithmetic so that overflow, underflow, and invalid
+/// division operations do not panic or produce wrapped values.
+///
+/// # Arguments
+/// * `left` - The left-hand integer operand.
+/// * `op` - The binary operator to apply.
+/// * `right` - The right-hand integer operand.
+///
+/// # Returns
+/// * `Some(Value::Int)` if the operation succeeds.
+/// * `None` if the operator is unsupported or the arithmetic operation fails,
+///   such as on overflow or division by zero.
 fn fold_int(left: i64, op: BinaryOp, right: i64) -> Option<Value> {
     let value = match op {
         BinaryOp::Plus => left.checked_add(right)?,
@@ -77,6 +104,20 @@ fn fold_int(left: i64, op: BinaryOp, right: i64) -> Option<Value> {
     Some(Value::Int(value))
 }
 
+/// Attempts to fold a floating-point binary operation into a constant [`Value`].
+///
+/// The operation is evaluated normally and the result is accepted only if it
+/// is finite. Results such as positive or negative infinity and `NaN` are not
+/// folded.
+///
+/// # Arguments
+/// * `left` - The left-hand floating-point operand.
+/// * `op` - The binary operator to apply.
+/// * `right` - The right-hand floating-point operand.
+///
+/// # Returns
+/// * `Some(Value::Float)` if the operation produces a finite result.
+/// * `None` if the operator is unsupported or the result is non-finite.
 fn fold_float(left: f64, op: BinaryOp, right: f64) -> Option<Value> {
     let value = match op {
         BinaryOp::Plus => left + right,
