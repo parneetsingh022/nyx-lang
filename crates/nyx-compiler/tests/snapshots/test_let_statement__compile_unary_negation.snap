@@ -1,0 +1,13 @@
+---
+source: crates/nyx-compiler/tests/test_let_statement.rs
+expression: "compile_source(\"let value = -10;\")"
+---
+Constants:
+   0  Int(-10)
+
+Globals:
+   0  value
+
+Bytecode:
+   0  LOAD_CONSTANT          0  (Int(-10))
+   3  DEFINE_GLOBAL          0  (value)

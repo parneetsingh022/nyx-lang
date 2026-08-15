@@ -1,5 +1,6 @@
 use std::{env, fs, process};
 
+use nyx_compiler::{Compiler, Disassembler};
 use nyx_diagnostic::ParserError;
 use nyx_lexer::Lexer;
 use nyx_parser::{Parser, ast::Stmt};
@@ -46,9 +47,15 @@ fn main() {
 
     match ast {
         Ok(statements) => {
-            for stmt in statements {
+            for stmt in &statements {
                 println!("{:#?}", stmt.debug_with(&lexer.symbol_registry));
             }
+
+            let compiler = Compiler::new(&statements);
+            let bytecode = compiler.compile();
+
+            let dis = Disassembler::new(&bytecode, &lexer.symbol_registry);
+            println!("{}", dis);
         }
         Err(err) => {
             eprintln!("{:?}", miette::Report::new(err));

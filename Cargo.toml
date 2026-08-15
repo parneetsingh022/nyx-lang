@@ -1,6 +1,7 @@
 [workspace]
 members = [
     ".",
+    "crates/nyx-compiler",
     "crates/nyx-diagnostic",
     "crates/nyx-lexer",
     "crates/nyx-parser",
@@ -11,18 +12,22 @@ resolver = "3"
 
 [workspace.dependencies]
 miette = { version = "7.6.0", features = ["fancy"] }
-strum = "0.28.0"
+strum = { version = "0.28.0", features = ["derive"] }
 strum_macros = "0.28.0"
 thiserror = "2.0.18"
-
-insta = "1.48.0"
-rstest = "0.26.1"
+num_enum = "0.7.6"
 
 nyx-diagnostic = { path = "crates/nyx-diagnostic" }
 nyx-source = { path = "crates/nyx-source" }
 nyx-token = { path = "crates/nyx-token" }
 nyx-lexer = { path = "crates/nyx-lexer" }
 nyx-parser = { path = "crates/nyx-parser" }
+nyx-compiler = { path = "crates/nyx-compiler" }
+
+# Dev deps
+insta = "1.48.0"
+rstest = "0.26.1"
+
 
 [package]
 name = "nyx-lang"
@@ -48,6 +53,7 @@ nyx-source.workspace = true
 nyx-token.workspace = true
 nyx-lexer.workspace = true
 nyx-parser.workspace = true
+nyx-compiler.workspace = true
 
 [dev-dependencies]
 insta.workspace = true

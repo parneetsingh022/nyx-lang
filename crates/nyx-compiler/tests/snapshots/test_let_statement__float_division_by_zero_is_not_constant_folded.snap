@@ -1,0 +1,16 @@
+---
+source: crates/nyx-compiler/tests/test_let_statement.rs
+expression: "compile_source(\"let result = 10.0 / 0.0;\")"
+---
+Constants:
+   0  Float(10.0)
+   1  Float(0.0)
+
+Globals:
+   0  result
+
+Bytecode:
+   0  LOAD_CONSTANT          0  (Float(10.0))
+   3  LOAD_CONSTANT          1  (Float(0.0))
+   6  BINARY                 3  (DIV)
+   8  DEFINE_GLOBAL          0  (result)

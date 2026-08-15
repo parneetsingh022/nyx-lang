@@ -1,0 +1,13 @@
+---
+source: crates/nyx-compiler/tests/test_let_statement.rs
+expression: "compile_source(\"let value = !true;\")"
+---
+Constants:
+   0  Bool(false)
+
+Globals:
+   0  value
+
+Bytecode:
+   0  LOAD_CONSTANT          0  (Bool(false))
+   3  DEFINE_GLOBAL          0  (value)

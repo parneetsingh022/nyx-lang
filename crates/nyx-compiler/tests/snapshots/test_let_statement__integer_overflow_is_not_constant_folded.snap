@@ -1,0 +1,16 @@
+---
+source: crates/nyx-compiler/tests/test_let_statement.rs
+expression: "compile_source(\"let result = 9223372036854775807 + 1;\")"
+---
+Constants:
+   0  Int(9223372036854775807)
+   1  Int(1)
+
+Globals:
+   0  result
+
+Bytecode:
+   0  LOAD_CONSTANT          0  (Int(9223372036854775807))
+   3  LOAD_CONSTANT          1  (Int(1))
+   6  BINARY                 0  (ADD)
+   8  DEFINE_GLOBAL          0  (result)

@@ -1,0 +1,20 @@
+[package]
+name = "nyx-compiler"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+strum.workspace = true
+strum_macros.workspace = true
+num_enum.workspace = true
+
+nyx-parser.workspace = true
+nyx-source.workspace = true
+nyx-token.workspace = true
+
+[dev-dependencies]
+rstest.workspace = true
+insta.workspace = true
+nyx-lexer.workspace = true
+nyx-parser.workspace = true
+nyx-diagnostic.workspace = true
