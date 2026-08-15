@@ -178,3 +178,8 @@ fn test_integer_underflow_is_not_constant_folded() {
 fn test_integer_multiplication_overflow_is_not_constant_folded() {
     insta::assert_snapshot!(compile_source("let result = 9223372036854775807 * 2;"));
 }
+
+#[test]
+fn test_integer_negation_overflow_is_not_constant_folded() {
+    insta::assert_snapshot!(compile_source("let result = -(-9223372036854775807 - 1);"));
+}

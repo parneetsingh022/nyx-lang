@@ -1,7 +1,6 @@
 ---
 source: crates/nyx-compiler/tests/test_let_statement.rs
-assertion_line: 184
-expression: "compile_source(\"let result = -9223372036854775807 - 1;\")"
+expression: "compile_source(\"let result = -(-9223372036854775807 - 1);\")"
 ---
 Constants:
    0  Int(-9223372036854775808)
@@ -11,4 +10,5 @@ Globals:
 
 Bytecode:
    0  LOAD_CONSTANT          0  (Int(-9223372036854775808))
-   3  DEFINE_GLOBAL          0  (result)
+   3  UNARY                  0  (NEG)
+   5  DEFINE_GLOBAL          0  (result)

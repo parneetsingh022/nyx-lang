@@ -25,7 +25,6 @@ pub(crate) fn fold_expr(expr: &Expr) -> Option<Value> {
         ExprKind::IntLiteral(value) => Some(Value::Int(*value)),
         ExprKind::FloatLiteral(value) => Some(Value::Float(*value)),
         ExprKind::Bool(value) => Some(Value::Bool(*value)),
-
         ExprKind::Unary { op, expr } => fold_unary(*op, fold_expr(expr)?),
         ExprKind::Binary { left, op, right } => {
             fold_binary(fold_expr(left)?, *op, fold_expr(right)?)
@@ -34,9 +33,21 @@ pub(crate) fn fold_expr(expr: &Expr) -> Option<Value> {
     }
 }
 
+/// Attempts to fold a unary operation into a constant [`Value`].
+///
+/// Applies the unary operator to an already-folded constant value. Integer
+/// negation uses checked arithmetic and returns `None` on overflow.
+///
+/// # Arguments
+/// * `op` - The unary operator to apply.
+/// * `value` - The constant value to operate on.
+///
+/// # Returns
+/// * `Some(Value)` if the operation is valid and can be evaluated.
+/// * `None` if the operator/value combination is invalid or integer negation overflows.
 fn fold_unary(op: UnaryOp, value: Value) -> Option<Value> {
     match (op, value) {
-        (UnaryOp::Minus, Value::Int(value)) => Some(Value::Int(-value)),
+        (UnaryOp::Minus, Value::Int(value)) => Some(Value::Int(value.checked_neg()?)),
         (UnaryOp::Minus, Value::Float(value)) => Some(Value::Float(-value)),
         (UnaryOp::Not, Value::Bool(value)) => Some(Value::Bool(!value)),
 
@@ -371,6 +382,13 @@ mod tests {
     #[test]
     fn test_mixed_float_division_by_zero_returns_none() {
         let expr = binary(int(10), BinaryOp::Divide, float(0.0));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_integer_negation_overflow_returns_none() {
+        let expr = unary(UnaryOp::Minus, int(i64::MIN));
 
         assert_eq!(fold_expr(&expr), None);
     }
