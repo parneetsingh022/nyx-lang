@@ -1,3 +1,2 @@
 # nyx-lang
-Hobby programming language
-
+A custom programming language and bytecode compiler, written entirely in Rust.
