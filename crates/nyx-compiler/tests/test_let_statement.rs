@@ -96,6 +96,29 @@ fn test_compile_logical_not() {
 }
 
 #[test]
+fn test_compile_subtraction_using_globals() {
+    insta::assert_snapshot!(compile_source(
+        r#"
+        let x = 20;
+        let y = 5;
+        let result = x - y;
+        "#
+    ));
+}
+
+#[test]
+fn test_compile_left_associative_subtraction() {
+    insta::assert_snapshot!(compile_source(
+        r#"
+        let x = 20.5;
+        let y = 5;
+        let z = 2;
+        let result = x - y - z;
+        "#
+    ));
+}
+
+#[test]
 fn test_compile_multiple_let_bindings() {
     insta::assert_snapshot!(compile_source(
         r#"
@@ -150,6 +173,28 @@ fn test_compile_reuses_constant_across_expressions() {
         let x = 10;
         let y = x + 10;
         let z = y + 10;
+        "#
+    ));
+}
+
+#[test]
+fn test_compile_globals_with_operator_precedence() {
+    insta::assert_snapshot!(compile_source(
+        r#"
+        let x = 10;
+        let y = 10 + x;
+        let c = x + y * x + x / y;
+        "#
+    ));
+}
+
+#[test]
+fn test_compile_grouped_global_expression() {
+    insta::assert_snapshot!(compile_source(
+        r#"
+        let x = 10;
+        let y = 10 + x;
+        let c = ((x + y) * (x + x)) / y;
         "#
     ));
 }

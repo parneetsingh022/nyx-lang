@@ -1,0 +1,29 @@
+---
+source: crates/nyx-compiler/tests/test_let_statement.rs
+expression: "compile_source(r#\"\n        let x = 10;\n        let y = 10 + x;\n        let c = x + y * x + x / y;\n        \"#)"
+---
+Constants:
+   0  Int(10)
+
+Globals:
+   0  x
+   1  y
+   2  c
+
+Bytecode:
+   0  LOAD_CONSTANT          0  (Int(10))
+   3  DEFINE_GLOBAL          0  (x)
+   6  LOAD_CONSTANT          0  (Int(10))
+   9  LOAD_GLOBAL            0  (x)
+  12  BINARY                 0  (ADD)
+  14  DEFINE_GLOBAL          1  (y)
+  17  LOAD_GLOBAL            0  (x)
+  20  LOAD_GLOBAL            1  (y)
+  23  LOAD_GLOBAL            0  (x)
+  26  BINARY                 2  (MUL)
+  28  BINARY                 0  (ADD)
+  30  LOAD_GLOBAL            0  (x)
+  33  LOAD_GLOBAL            1  (y)
+  36  BINARY                 3  (DIV)
+  38  BINARY                 0  (ADD)
+  40  DEFINE_GLOBAL          2  (c)
