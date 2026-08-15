@@ -27,10 +27,8 @@ fn compile_source(source: &str) -> String {
         .collect::<Result<Vec<Stmt>, ParserError>>()
         .expect("parsing failed");
 
-    let mut compiler = Compiler::new(&statements);
-    compiler.compile();
-
-    let bytecode = compiler.bytecode();
+    let compiler = Compiler::new(&statements);
+    let bytecode = compiler.compile();
 
     Disassembler::new(&bytecode, &lexer.symbol_registry).to_string()
 }
@@ -110,7 +108,7 @@ fn test_compile_subtraction_using_globals() {
 fn test_compile_left_associative_subtraction() {
     insta::assert_snapshot!(compile_source(
         r#"
-        let x = 20.5;
+        let x = 20;
         let y = 5;
         let z = 2;
         let result = x - y - z;

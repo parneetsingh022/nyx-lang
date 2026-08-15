@@ -51,10 +51,8 @@ fn main() {
                 println!("{:#?}", stmt.debug_with(&lexer.symbol_registry));
             }
 
-            let mut compiler = Compiler::new(&statements);
-            compiler.compile();
-
-            let bytecode = compiler.bytecode();
+            let compiler = Compiler::new(&statements);
+            let bytecode = compiler.compile();
 
             let dis = Disassembler::new(&bytecode, &lexer.symbol_registry);
             println!("{}", dis);

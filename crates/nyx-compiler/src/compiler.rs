@@ -17,17 +17,15 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    pub fn compile(&mut self) {
+    pub fn compile(mut self) -> ByteCode {
         for stmt in self.stmts {
             match stmt.kind() {
                 StmtKind::Let { name, expr } => self.compile_let_stmt(name, expr),
                 _ => todo!("{:?} is not implemented yet", stmt.kind()),
             }
         }
-    }
 
-    pub fn bytecode(&mut self) -> ByteCode {
-        std::mem::take(&mut self.bytecode)
+        self.bytecode
     }
 
     fn compile_let_stmt(&mut self, name: &SpannedIdentifier, expr: &Expr) {
