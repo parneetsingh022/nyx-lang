@@ -45,25 +45,25 @@ impl<'a> Compiler<'a> {
                 unreachable!("literals are always folded")
             }
 
-            ExprKind::Identifier(symbol) => self.compile_identifier(symbol),
-            ExprKind::Binary { left, op, right } => self.compile_binary_expr(left, op, right),
-            ExprKind::Unary { op, expr } => self.compile_unary_expr(op, expr),
+            ExprKind::Identifier(symbol) => self.compile_identifier(*symbol),
+            ExprKind::Binary { left, op, right } => self.compile_binary_expr(left, *op, right),
+            ExprKind::Unary { op, expr } => self.compile_unary_expr(*op, expr),
             ExprKind::Call { .. } => todo!("function call is not implemented yet!"),
         }
     }
 
-    fn compile_identifier(&mut self, symbol: &Symbol) {
+    fn compile_identifier(&mut self, symbol: Symbol) {
         let index = self
             .bytecode
             .globals()
-            .get(symbol)
+            .get(&symbol)
             .copied()
             .expect("referenced undefined global");
 
         self.bytecode.emit_load_global(index);
     }
 
-    fn compile_binary_expr(&mut self, left: &Expr, op: &BinaryOp, right: &Expr) {
+    fn compile_binary_expr(&mut self, left: &Expr, op: BinaryOp, right: &Expr) {
         self.compile_expr(left);
         self.compile_expr(right);
 
@@ -76,7 +76,7 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    fn compile_unary_expr(&mut self, op: &UnaryOp, expr: &Expr) {
+    fn compile_unary_expr(&mut self, op: UnaryOp, expr: &Expr) {
         self.compile_expr(expr);
 
         match op {
