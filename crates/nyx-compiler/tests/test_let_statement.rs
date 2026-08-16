@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use nyx_compiler::{Compiler, Disassembler};
 use nyx_diagnostic::ParserError;
 use nyx_lexer::Lexer;

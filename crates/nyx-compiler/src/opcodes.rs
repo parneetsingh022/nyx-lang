@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Bytecode operation codes understood by the Nyx virtual machine.
 //!
 //! Each [`OpCode`] identifies a single instruction that can appear in compiled

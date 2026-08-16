@@ -2,6 +2,7 @@
 name = "nyx-diagnostic"
 version = "0.1.0"
 edition = "2024"
+license.workspace = true
 publish = false
 
 [dependencies]
@@ -9,4 +10,3 @@ miette.workspace = true
 thiserror.workspace = true
 nyx-source.workspace = true
 nyx-token.workspace = true
-

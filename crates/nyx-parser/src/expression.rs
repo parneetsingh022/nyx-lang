@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use nyx_diagnostic::ParserError;
 use nyx_source::Span;
 use nyx_token::{Keyword, Symbol, Token, TokenKind};

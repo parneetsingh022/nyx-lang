@@ -2,6 +2,8 @@
 name = "nyx-compiler"
 version = "0.1.0"
 edition = "2024"
+license.workspace = true
+publish = false
 
 [dependencies]
 strum.workspace = true
@@ -16,5 +18,4 @@ nyx-token.workspace = true
 rstest.workspace = true
 insta.workspace = true
 nyx-lexer.workspace = true
-nyx-parser.workspace = true
 nyx-diagnostic.workspace = true

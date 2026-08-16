@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Syntax parser for translating token streams into abstract syntax trees (ASTs).
 
 pub mod ast;

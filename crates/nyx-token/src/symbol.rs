@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! String Interning and Symbol Management
 //!
 //! This module provides the [`SymbolRegistry`], a central mechanism for string interning.
