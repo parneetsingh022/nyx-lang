@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Defines the core tokens used by the Nyx lexer and parser.
 //!
 //! A [`Token`] ties together two important pieces of information: what a piece

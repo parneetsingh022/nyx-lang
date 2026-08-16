@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Abstract Syntax Tree (AST) definitions for the nyx programming language.
 //!
 //! This module defines the core data structures that represent parsed source code

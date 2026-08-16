@@ -2,10 +2,10 @@
 name = "nyx-token"
 version = "0.1.0"
 edition = "2024"
+license.workspace = true
 publish = false
 
 [dependencies]
 strum.workspace = true
 strum_macros.workspace = true
 nyx-source.workspace = true
-

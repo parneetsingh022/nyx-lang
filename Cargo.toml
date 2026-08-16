@@ -28,11 +28,15 @@ nyx-compiler = { path = "crates/nyx-compiler" }
 insta = "1.48.0"
 rstest = "0.26.1"
 
+[workspace.package]
+license = "MIT OR Apache-2.0"
+
 
 [package]
 name = "nyx-lang"
 version = "0.1.0"
 edition = "2024"
+license.workspace = true
 
 [[bin]]
 name = "nyx"

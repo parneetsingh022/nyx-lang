@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Constant folding module for the Nyx AST.
 //!
 //! This module provides functionality to evaluate expressions at compile-time

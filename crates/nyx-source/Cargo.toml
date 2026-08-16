@@ -2,8 +2,8 @@
 name = "nyx-source"
 version = "0.1.0"
 edition = "2024"
+license.workspace = true
 publish = false
 
 [dependencies]
 miette.workspace = true
-

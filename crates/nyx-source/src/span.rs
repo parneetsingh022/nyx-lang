@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use miette::SourceSpan;
 
 /// A half-open byte range within a source file.

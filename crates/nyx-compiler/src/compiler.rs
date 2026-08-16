@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::ByteCode;
 use crate::fold_expr;
 use crate::opcodes::{BinaryOpCode, UnaryOpCode};
