@@ -353,13 +353,13 @@ impl Lexer {
             // Potential two character symbols
             '+' => self.lex_compound_operator('+', TokenKind::PlusPlus, TokenKind::Plus),
             '-' => self.lex_compound_operator('-', TokenKind::MinusMinus, TokenKind::Minus),
+            '*' => self.lex_compound_operator('*', TokenKind::StarStar, TokenKind::Star),
             '=' => self.lex_compound_operator('=', TokenKind::EqEq, TokenKind::Eq),
             '!' => self.lex_compound_operator('=', TokenKind::BangEq, TokenKind::Bang),
             '<' => self.lex_compound_operator('=', TokenKind::LtEq, TokenKind::Lt),
             '>' => self.lex_compound_operator('=', TokenKind::GtEq, TokenKind::Gt),
 
             // Single char symbols
-            '*' => self.lex_single_char_token(TokenKind::Star),
             '/' => self.lex_single_char_token(TokenKind::Slash),
             '%' => self.lex_single_char_token(TokenKind::Percent),
             '^' => self.lex_single_char_token(TokenKind::Caret),

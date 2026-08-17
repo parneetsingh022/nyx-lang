@@ -59,6 +59,7 @@ pub enum BinaryOpCode {
     Sub = 0x01,
     Mul = 0x02,
     Div = 0x03,
+    Pow = 0x04,
 }
 
 impl BinaryOpCode {

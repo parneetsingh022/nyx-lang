@@ -100,6 +100,7 @@ fn fold_int(left: i64, op: BinaryOp, right: i64) -> Option<Value> {
         BinaryOp::Minus => left.checked_sub(right)?,
         BinaryOp::Multiply => left.checked_mul(right)?,
         BinaryOp::Divide => left.checked_div(right)?,
+        BinaryOp::Power => left.checked_pow(right.try_into().ok()?)?,
         _ => return None,
     };
 
@@ -126,6 +127,7 @@ fn fold_float(left: f64, op: BinaryOp, right: f64) -> Option<Value> {
         BinaryOp::Minus => left - right,
         BinaryOp::Multiply => left * right,
         BinaryOp::Divide => left / right,
+        BinaryOp::Power => left.powf(right),
         _ => return None,
     };
 

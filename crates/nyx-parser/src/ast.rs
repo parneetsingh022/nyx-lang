@@ -36,6 +36,7 @@ pub enum Precedence {
     Term = 60,   // +, -
     Factor = 70, // *, /
     Prefix = 80, // -, !
+    Power = 90,  // **
 }
 
 impl Precedence {
@@ -95,6 +96,8 @@ pub enum BinaryOp {
     Multiply,
     /// Division (`/`)
     Divide,
+    /// Power (`**`)
+    Power,
     /// Assignment (`=`)
     Assignment,
 }
@@ -107,6 +110,7 @@ impl BinaryOp {
             // Left Associative
             Self::Plus | Self::Minus => Precedence::Term.left_assoc(),
             Self::Multiply | Self::Divide => Precedence::Factor.left_assoc(),
+            Self::Power => Precedence::Power.right_assoc(),
         }
     }
 
@@ -115,6 +119,7 @@ impl BinaryOp {
             TokenKind::Plus => BinaryOp::Plus,
             TokenKind::Minus => BinaryOp::Minus,
             TokenKind::Star => BinaryOp::Multiply,
+            TokenKind::StarStar => BinaryOp::Power,
             TokenKind::Slash => BinaryOp::Divide,
             TokenKind::Eq => BinaryOp::Assignment,
             _ => return None,

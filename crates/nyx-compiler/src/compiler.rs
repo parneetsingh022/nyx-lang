@@ -74,6 +74,7 @@ impl<'a> Compiler<'a> {
             BinaryOp::Minus => self.bytecode.emit_binary_opcode(BinaryOpCode::Sub),
             BinaryOp::Multiply => self.bytecode.emit_binary_opcode(BinaryOpCode::Mul),
             BinaryOp::Divide => self.bytecode.emit_binary_opcode(BinaryOpCode::Div),
+            BinaryOp::Power => self.bytecode.emit_binary_opcode(BinaryOpCode::Pow),
             BinaryOp::Assignment => todo!("assignment is not implemented yet!"),
         }
     }
