@@ -232,6 +232,7 @@ mod tests {
     #[case(BinaryOp::Minus, 20, 10, 10)]
     #[case(BinaryOp::Multiply, 4, 5, 20)]
     #[case(BinaryOp::Divide, 20, 4, 5)]
+    #[case(BinaryOp::Power, 2, 10, 1024)]
     fn test_fold_integer_binary_operations(
         #[case] op: BinaryOp,
         #[case] left: i64,
@@ -248,6 +249,7 @@ mod tests {
     #[case(BinaryOp::Minus, 10.0, 2.5, 7.5)]
     #[case(BinaryOp::Multiply, 4.0, 2.5, 10.0)]
     #[case(BinaryOp::Divide, 10.0, 2.0, 5.0)]
+    #[case(BinaryOp::Power, 2.0, 3.0, 8.0)]
     fn test_fold_float_binary_operations(
         #[case] op: BinaryOp,
         #[case] left: f64,
@@ -355,6 +357,72 @@ mod tests {
         let expr = binary(expr, BinaryOp::Divide, denominator);
 
         assert_eq!(fold_expr(&expr), Some(Value::Float(-7.8)));
+    }
+
+    #[rstest]
+    #[case(2, 3, 8)]
+    #[case(5, 0, 1)]
+    #[case(10, 1, 10)]
+    #[case(-2, 3, -8)]
+    #[case(-2, 4, 16)]
+    fn test_fold_integer_power(#[case] base: i64, #[case] exponent: i64, #[case] expected: i64) {
+        let expr = binary(int(base), BinaryOp::Power, int(exponent));
+
+        assert_eq!(fold_expr(&expr), Some(Value::Int(expected)));
+    }
+
+    #[rstest]
+    #[case(2.0, 3.0, 8.0)]
+    #[case(9.0, 0.5, 3.0)]
+    #[case(4.0, -1.0, 0.25)]
+    #[case(2.5, 2.0, 6.25)]
+    fn test_fold_float_power(#[case] base: f64, #[case] exponent: f64, #[case] expected: f64) {
+        let expr = binary(float(base), BinaryOp::Power, float(exponent));
+
+        assert_eq!(fold_expr(&expr), Some(Value::Float(expected)));
+    }
+
+    #[test]
+    fn test_fold_mixed_int_float_power() {
+        let expr = binary(int(9), BinaryOp::Power, float(0.5));
+
+        assert_eq!(fold_expr(&expr), Some(Value::Float(3.0)));
+    }
+
+    #[test]
+    fn test_fold_mixed_float_int_power() {
+        let expr = binary(float(2.5), BinaryOp::Power, int(2));
+
+        assert_eq!(fold_expr(&expr), Some(Value::Float(6.25)));
+    }
+
+    #[test]
+    fn test_integer_power_overflow_returns_none() {
+        let expr = binary(int(i64::MAX), BinaryOp::Power, int(2));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_integer_negative_power_returns_none() {
+        let expr = binary(int(2), BinaryOp::Power, int(-1));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_float_power_non_finite_result_returns_none() {
+        let expr = binary(float(f64::MAX), BinaryOp::Power, float(2.0));
+
+        assert_eq!(fold_expr(&expr), None);
+    }
+
+    #[test]
+    fn test_float_power_nan_returns_none() {
+        // sqrt(-1) produces NaN.
+        let expr = binary(float(-1.0), BinaryOp::Power, float(0.5));
+
+        assert_eq!(fold_expr(&expr), None);
     }
 
     #[rstest]

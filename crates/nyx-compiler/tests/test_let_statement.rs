@@ -200,6 +200,19 @@ fn test_compile_grouped_global_expression() {
 }
 
 #[test]
+fn test_power_operator() {
+    insta::assert_snapshot!(compile_source(
+        r#"
+        let x = 10**3;
+        let y = 10**2**4;
+        let c = x ** y;
+        let d = x ** y ** c;
+        let e = (x ** y) ** c;
+        "#
+    ));
+}
+
+#[test]
 fn test_integer_overflow_is_not_constant_folded() {
     insta::assert_snapshot!(compile_source("let result = 9223372036854775807 + 1;"));
 }
