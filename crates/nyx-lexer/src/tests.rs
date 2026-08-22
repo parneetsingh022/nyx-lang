@@ -207,6 +207,7 @@ mod token_kinds {
     #[case("-", TokenKind::Minus)]
     #[case("--", TokenKind::MinusMinus)]
     #[case("*", TokenKind::Star)]
+    #[case("**", TokenKind::StarStar)]
     #[case("/", TokenKind::Slash)]
     #[case("%", TokenKind::Percent)]
     #[case("^", TokenKind::Caret)]
@@ -338,6 +339,7 @@ mod token_spans {
 
     #[rstest]
     #[case("++", TokenKind::PlusPlus)]
+    #[case("**", TokenKind::StarStar)]
     #[case("--", TokenKind::MinusMinus)]
     #[case("==", TokenKind::EqEq)]
     #[case("!=", TokenKind::BangEq)]
@@ -364,7 +366,7 @@ mod token_spans {
     #[test]
     fn tracks_spans_in_mixed_expression() {
         assert_spans(
-            "let x = (1 + [2 * 3]);",
+            "let x = (1 + [2 ** 3]);",
             &[
                 (
                     ExpectedToken::Kind(TokenKind::Keyword(Keyword::Let)),
@@ -380,17 +382,17 @@ mod token_spans {
                     Span::new(13, 14),
                 ),
                 (ExpectedToken::Integer("2"), Span::new(14, 15)),
-                (ExpectedToken::Kind(TokenKind::Star), Span::new(16, 17)),
-                (ExpectedToken::Integer("3"), Span::new(18, 19)),
+                (ExpectedToken::Kind(TokenKind::StarStar), Span::new(16, 18)),
+                (ExpectedToken::Integer("3"), Span::new(19, 20)),
                 (
                     ExpectedToken::Kind(TokenKind::CloseBracket),
-                    Span::new(19, 20),
+                    Span::new(20, 21),
                 ),
                 (
                     ExpectedToken::Kind(TokenKind::CloseParen),
-                    Span::new(20, 21),
+                    Span::new(21, 22),
                 ),
-                (ExpectedToken::Kind(TokenKind::Semi), Span::new(21, 22)),
+                (ExpectedToken::Kind(TokenKind::Semi), Span::new(22, 23)),
             ],
         );
     }

@@ -101,6 +101,8 @@ pub enum TokenKind {
     GtEq,
     /// `*`
     Star,
+    /// `**`
+    StarStar,
     /// `/`
     Slash,
     /// `^`
@@ -196,6 +198,7 @@ impl fmt::Display for TokenKind {
             Self::Gt => write!(f, ">"),
             Self::GtEq => write!(f, ">="),
             Self::Star => write!(f, "*"),
+            Self::StarStar => write!(f, "**"),
             Self::Slash => write!(f, "/"),
             Self::Caret => write!(f, "^"),
             Self::Percent => write!(f, "%"),

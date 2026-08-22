@@ -451,6 +451,7 @@ pub(crate) mod tests {
     #[case("1 - 2", BinaryOp::Minus)]
     #[case("1 * 2", BinaryOp::Multiply)]
     #[case("1 / 2", BinaryOp::Divide)]
+    #[case("1 ** 2", BinaryOp::Power)]
     fn parses_binary_operators(#[case] source: &str, #[case] op: BinaryOp) {
         let expected = binary(int(1), op, int(2));
 
@@ -502,6 +503,23 @@ pub(crate) mod tests {
         assert_eq!(parse_expression(source), expected);
     }
 
+    #[rstest]
+    #[case(
+        "2 ** 3 ** 4",
+        binary(int(2), BinaryOp::Power, binary(int(3), BinaryOp::Power, int(4)),)
+    )]
+    #[case(
+        "2 ** 3 ** 4 ** 5",
+        binary(
+            int(2),
+            BinaryOp::Power,
+            binary(int(3), BinaryOp::Power, binary(int(4), BinaryOp::Power, int(5)),),
+        )
+    )]
+    fn power_is_right_associative(#[case] source: &str, #[case] expected: Expr) {
+        assert_eq!(parse_expression(source), expected);
+    }
+
     #[test]
     fn grouped_expression_overrides_precedence() {
         let expr = parse_expression("(1 + 2) * 3");
@@ -513,6 +531,103 @@ pub(crate) mod tests {
         );
 
         assert_eq!(expr, expected);
+    }
+
+    #[test]
+    fn grouped_power_overrides_right_associativity() {
+        let expr = parse_expression("(2 ** 3) ** 4");
+
+        let expected = binary(
+            binary(int(2), BinaryOp::Power, int(3)),
+            BinaryOp::Power,
+            int(4),
+        );
+
+        assert_eq!(expr, expected);
+    }
+
+    #[rstest]
+    #[case(
+        "2 * 3 ** 4",
+        binary(int(2), BinaryOp::Multiply, binary(int(3), BinaryOp::Power, int(4)),)
+    )]
+    #[case(
+        "2 ** 3 * 4",
+        binary(binary(int(2), BinaryOp::Power, int(3)), BinaryOp::Multiply, int(4),)
+    )]
+    #[case(
+        "8 / 2 ** 3",
+        binary(int(8), BinaryOp::Divide, binary(int(2), BinaryOp::Power, int(3)),)
+    )]
+    #[case(
+        "8 ** 2 / 4",
+        binary(binary(int(8), BinaryOp::Power, int(2)), BinaryOp::Divide, int(4),)
+    )]
+    fn power_binds_tighter_than_factor_operators(#[case] source: &str, #[case] expected: Expr) {
+        assert_eq!(parse_expression(source), expected);
+    }
+
+    #[rstest]
+    #[case(
+        "1 + 2 ** 3",
+        binary(int(1), BinaryOp::Plus, binary(int(2), BinaryOp::Power, int(3)),)
+    )]
+    #[case(
+        "2 ** 3 + 4",
+        binary(binary(int(2), BinaryOp::Power, int(3)), BinaryOp::Plus, int(4),)
+    )]
+    #[case(
+        "10 - 2 ** 3",
+        binary(int(10), BinaryOp::Minus, binary(int(2), BinaryOp::Power, int(3)),)
+    )]
+    fn power_binds_tighter_than_term_operators(#[case] source: &str, #[case] expected: Expr) {
+        assert_eq!(parse_expression(source), expected);
+    }
+
+    #[test]
+    fn power_binds_tighter_than_unary_minus() {
+        // -2 ** 3 => -(2 ** 3)
+        let expr = parse_expression("-2 ** 3");
+
+        let expected = unary(UnaryOp::Minus, binary(int(2), BinaryOp::Power, int(3)));
+
+        assert_eq!(expr, expected);
+    }
+
+    #[test]
+    fn grouped_unary_base_can_be_powered() {
+        // (-2) ** 3
+        let expr = parse_expression("(-2) ** 3");
+
+        let expected = binary(unary(UnaryOp::Minus, int(2)), BinaryOp::Power, int(3));
+
+        assert_eq!(expr, expected);
+    }
+
+    #[test]
+    fn power_accepts_call_expression_as_left_operand() {
+        let expr = parse_expression("foo() ** 2");
+
+        let ExprKind::Binary { left, op, right } = expr.kind() else {
+            panic!("expected binary expression");
+        };
+
+        assert_eq!(*op, BinaryOp::Power);
+        assert!(matches!(left.kind(), ExprKind::Call { .. }));
+        assert_eq!(**right, int(2));
+    }
+
+    #[test]
+    fn power_accepts_call_expression_as_right_operand() {
+        let expr = parse_expression("2 ** foo()");
+
+        let ExprKind::Binary { left, op, right } = expr.kind() else {
+            panic!("expected binary expression");
+        };
+
+        assert_eq!(*op, BinaryOp::Power);
+        assert_eq!(**left, int(2));
+        assert!(matches!(right.kind(), ExprKind::Call { .. }));
     }
 
     #[rstest]
@@ -685,6 +800,36 @@ pub(crate) mod tests {
 
         assert_eq!(expr, expected);
     }
+
+    #[test]
+    fn parses_complex_power_precedence_and_associativity() {
+        // 1 + 2 * 3 ** 4 ** 5 - 6
+        //
+        // Expected:
+        // 1 + (2 * (3 ** (4 ** 5))) - 6
+        let expr = parse_expression("1 + 2 * 3 ** 4 ** 5 - 6");
+
+        let expected = binary(
+            binary(
+                int(1),
+                BinaryOp::Plus,
+                binary(
+                    int(2),
+                    BinaryOp::Multiply,
+                    binary(
+                        int(3),
+                        BinaryOp::Power,
+                        binary(int(4), BinaryOp::Power, int(5)),
+                    ),
+                ),
+            ),
+            BinaryOp::Minus,
+            int(6),
+        );
+
+        assert_eq!(expr, expected);
+    }
+
     // =========================================================================
     // Span Tests
     // =========================================================================
@@ -713,6 +858,21 @@ pub(crate) mod tests {
         } else {
             panic!("Expected binary expression");
         }
+    }
+
+    #[test]
+    fn parses_power_expression_spans() {
+        let expr = parse_expression("2 ** 10");
+
+        assert_eq!(expr.span(), Span::new(0, 7));
+
+        let ExprKind::Binary { left, op, right } = expr.kind() else {
+            panic!("expected binary expression");
+        };
+
+        assert_eq!(*op, BinaryOp::Power);
+        assert_eq!(left.span(), Span::new(0, 1));
+        assert_eq!(right.span(), Span::new(5, 7));
     }
 
     #[test]
