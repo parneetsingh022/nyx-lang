@@ -145,8 +145,8 @@ impl<'a> Parser<'a> {
             .ok_or_else(|| self.unexpected_eof_error())?;
 
         let expr = match kind {
-            TokenKind::IntLiteral(symbol) => self.parse_integer_literal(symbol, span),
-            TokenKind::FloatLiteral(symbol) => self.parse_float_literal(symbol, span),
+            TokenKind::IntLiteral(symbol) => self.parse_integer_literal(symbol, span)?,
+            TokenKind::FloatLiteral(symbol) => self.parse_float_literal(symbol, span)?,
             TokenKind::Identifier(symbol) => Expr::new(ExprKind::Identifier(symbol), span),
             TokenKind::OpenParen => self.parse_grouped_expression(span)?,
             _ if kind.is_boolean() => self.parse_boolean(kind, span),
@@ -322,35 +322,59 @@ impl<'a> Parser<'a> {
     /// Parses an interned integer literal into an integer [`Expr`].
     ///
     /// The literal text is resolved through the symbol registry and converted to
-    /// an [`i64`]. Conversion failure indicates that the lexer produced an invalid
-    /// integer token, so this function panics in that case.
-    fn parse_integer_literal(&self, symbol: Symbol, span: Span) -> Expr {
-        // It is okay to panic here, because this is not a user error. If the lexer
-        // works as intended, it will not lex any invalid IntLiteral.
-        let value = self
-            .symbol_registry
-            .resolve(symbol)
-            .parse::<i64>()
-            .expect("Lexer produced an invalid integer literal");
+    /// an [`i64`].
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ParserError::NumberOutOfBounds`] if the parsed integer
+    /// exceeds the maximum or minimum bounds of a 64-bit signed integer.
+    fn parse_integer_literal(&self, symbol: Symbol, span: Span) -> Result<Expr, ParserError> {
+        let text = self.symbol_registry.resolve(symbol);
 
-        Expr::new(ExprKind::IntLiteral(value), span)
+        let value = text
+            .parse::<i64>()
+            .map_err(|err| ParserError::NumberOutOfBounds {
+                at: span,
+                src: self.source_file.clone(),
+                message: format!("Invalid integer: {}", err),
+            })?;
+
+        Ok(Expr::new(ExprKind::IntLiteral(value), span))
     }
 
     /// Parses an interned floating-point literal into a floating-point [`Expr`].
     ///
     /// The literal text is resolved through the symbol registry and converted to
-    /// an [`f64`]. Conversion failure indicates that the lexer produced an invalid
-    /// floating-point token, so this function panics in that case.
-    fn parse_float_literal(&self, symbol: Symbol, span: Span) -> Expr {
-        // It is okay to panic here, because this is not a user error. If the lexer
-        // works as intended, it will not lex any invalid FloatLiteral.
-        let value = self
-            .symbol_registry
-            .resolve(symbol)
-            .parse::<f64>()
-            .expect("Lexer produced an invalid float literal");
+    /// an [`f64`].
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ParserError::NumberOutOfBounds`] if the parsed float
+    /// is too large and overflows to infinity.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the lexer produced a malformed float token (e.g. invalid characters).
+    /// If the lexer is implemented correctly, this will never happen.
+    fn parse_float_literal(&self, symbol: Symbol, span: Span) -> Result<Expr, ParserError> {
+        let text = self.symbol_registry.resolve(symbol);
 
-        Expr::new(ExprKind::FloatLiteral(value), span)
+        // Since the lexer guarantees the string is correctly formatted (e.g., digits and one decimal),
+        // we can safely use expect() here. The only "error" is if the lexer is bugged.
+        let value = text
+            .parse::<f64>()
+            .expect("Lexer produced an invalidly formatted float literal");
+
+        // Manually trigger the out-of-bounds error if the number evaluated to infinity
+        if value.is_infinite() {
+            return Err(ParserError::NumberOutOfBounds {
+                at: span,
+                src: self.source_file.clone(),
+                message: "Float literal is too large and overflows to infinity".to_string(),
+            });
+        }
+
+        Ok(Expr::new(ExprKind::FloatLiteral(value), span))
     }
 }
 
@@ -1102,6 +1126,35 @@ pub(crate) mod tests {
             matches!(error, ParserError::ExpectedExpression { .. }),
             "expected ExpectedExpressionError between commas in `{source}`, \
          got: {error:?}"
+        );
+    }
+
+    #[rstest]
+    // i64::MAX is 9223372036854775807, so ending in 8 will overflow
+    #[case("9223372036854775808")]
+    // A ridiculously large number of digits
+    #[case("99999999999999999999999999999999999")]
+    fn reports_error_on_integer_overflow(#[case] source: &str) {
+        let error = parse_expression_error(source);
+
+        assert!(
+            matches!(error, ParserError::NumberOutOfBounds { .. }),
+            "expected NumberOutOfBounds error for huge integer `{source}`, \
+             got: {error:?}"
+        );
+    }
+
+    #[rstest]
+    // 1.8e308 is just over the maximum limit of an f64
+    #[case(
+        "180000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0"
+    )]
+    fn reports_error_on_float_overflow(#[case] source: &str) {
+        let error = parse_expression_error(source);
+
+        assert!(
+            matches!(error, ParserError::NumberOutOfBounds { .. }),
+            "expected NumberOutOfBounds error for float overflow, got: {error:?}"
         );
     }
 }
