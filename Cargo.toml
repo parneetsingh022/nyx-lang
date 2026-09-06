@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    ".",
+    "crates/nyx-cli",
     "crates/nyx-compiler",
     "crates/nyx-diagnostic",
     "crates/nyx-lexer",
@@ -29,36 +29,11 @@ insta = "1.48.0"
 rstest = "0.26.1"
 
 [workspace.package]
-license = "MIT OR Apache-2.0"
-
-
-[package]
-name = "nyx-lang"
 version = "0.1.0"
 edition = "2024"
-license.workspace = true
-
-[[bin]]
-name = "nyx"
-path = "src/main.rs"
+license = "MIT OR Apache-2.0"
 
 [profile.release]
 lto = true
 strip = true
 codegen-units = 1
-
-[dependencies]
-miette.workspace = true
-strum.workspace = true
-strum_macros.workspace = true
-thiserror.workspace = true
-nyx-diagnostic.workspace = true
-nyx-source.workspace = true
-nyx-token.workspace = true
-nyx-lexer.workspace = true
-nyx-parser.workspace = true
-nyx-compiler.workspace = true
-
-[dev-dependencies]
-insta.workspace = true
-rstest.workspace = true
