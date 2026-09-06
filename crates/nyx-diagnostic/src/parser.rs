@@ -168,4 +168,16 @@ pub enum ParserError {
         #[source_code]
         src: SourceFile,
     },
+
+    #[error("numeric literal is out of bounds: {message}")]
+    #[diagnostic(help("ensure the number fits within the limits of a 64-bit signed number"))]
+    NumberOutOfBounds {
+        #[source_code]
+        src: nyx_source::SourceFile,
+
+        #[label("this number is too large")]
+        at: nyx_source::Span, // Ensure this matches however you type your spans in miette
+
+        message: String,
+    },
 }
